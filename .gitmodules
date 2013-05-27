@@ -1,0 +1,3 @@
+[submodule "imageproc_py"]
+	path = imageproc_py
+	url = https://github.com/andrewjchen/imageproc_py.git
