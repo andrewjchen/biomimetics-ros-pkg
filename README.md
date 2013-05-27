@@ -26,3 +26,7 @@ Run:
 ```
 rosrun imageproc_node imageproc_node.py
 ```
+
+License
+------------
+All code licensed under the 3-clause modified-BSD license.
