@@ -4,6 +4,8 @@ biomimetics-ros-pkg
 Biomimetic Millisystems Lab ROS Repository.
 This repository includes an imageproc ROS node.
 
+See http://www.ros.org/wiki/biomimetics-ros-pkg for more information.
+
 Installation
 --------------
 
