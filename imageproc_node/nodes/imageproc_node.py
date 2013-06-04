@@ -31,18 +31,24 @@
 
 import rospy
 import geometry_msgs.msg
+import sensor_msgs.msg
 import time
+import struct
 
 from imageproc_py.stream.imageproc_uart_stream import *
 from imageproc_py.stream.uart_robot_stream import *
+from imageproc_py.stream.asynch_dispatch import *
+
+smsg = sensor_msgs.msg.JointState()
+imsg = sensor_msgs.msg.Imu()    # IMU message
+PI = 3.1415926536
+MPOS_SCALE = 2.0 * PI/ (2**16)
+
 
 def clamp(value, minVal, maxVal):
     return max(minVal, min(maxVal, value))
 
 def handle_command(msg):
-    # print 'desired linear vel ' + str(msg.linear.x)
-    # print 'desired angular rate ' + str(msg.angular.z)
-
     left_throttle = linearGain * msg.linear.x - angularGain * msg.angular.z
     right_throttle = linearGain * msg.linear.x + angularGain * msg.angular.z
     left_throttle = -left_throttle if invertLeft else left_throttle
@@ -50,8 +56,26 @@ def handle_command(msg):
     left_throttle = clamp(left_throttle, minThrottle, maxThrottle)
     right_throttle = clamp(right_throttle, minThrottle, maxThrottle)
 
-    print 'setting thrust left=%d  right=%d' %(left_throttle, right_throttle)
+    #print 'setting thrust left=%d  right=%d' %(left_throttle, right_throttle)
     robot.set_thrust_open_loop(left_throttle, right_throttle)
+
+def telem_data_received(message):
+    payload = message.data.data
+    pattern = '=LLll'+13*'h'
+    data = struct.unpack(pattern, payload)
+    print "imageproc_node data=" + str(data)
+    imsg.header.seq = data[0]   # sequence number is overwritten by publish
+    imsg.header.stamp.secs = int(data[1]/1e6)
+    imsg.header.stamp.nsecs = data[1]- 1e6 * int(data[1]/1e6)
+    imsg.header.frame_id = str(data[0]) # sequence number from ImageProc
+
+    imsg.angular_velocity.x = data[6]
+    imsg.angular_velocity.y = data[7]
+    imsg.angular_velocity.z = data[8]
+    imsg.linear_acceleration.x = data[10]
+    imsg.linear_acceleration.y = data[11]
+    imsg.linear_acceleration.z = data[12]
+    imuPub.publish(imsg)
 
 def main():
     print "nodetest.py running..."
@@ -60,6 +84,9 @@ def main():
     rospy.Subscriber('cmd_vel',
                      geometry_msgs.msg.Twist,
                      handle_command)
+
+    global imuPub
+    imuPub = rospy.Publisher('/robot/imu', sensor_msgs.msg.Imu)
 
     global invertLeft, invertRight, minThrottle, maxThrottle, linearGain, angularGain
     device = rospy.get_param('~device', '/dev/ttyUSB0')
@@ -81,9 +108,13 @@ def main():
 
     global robot
     ipu = ImageprocUARTStream(port=device)
-    robot = UARTRobotStream(ipu)
+    robot = UARTRobotStream(ipu, sinks={'telem_data':[telem_data_received]})
 
-    rospy.spin()
+    while not rospy.is_shutdown():
+        #rospy.loginfo('sending request for telemetry...')
+        robot.send_packet('GET_PID_TELEMETRY', struct.pack('h', 0))
+        rospy.sleep(0.05)
+
 
 if __name__ == '__main__':
     main()
