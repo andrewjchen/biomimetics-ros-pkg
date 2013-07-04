@@ -39,6 +39,8 @@ from imageproc_py.stream.imageproc_uart_stream import *
 from imageproc_py.stream.uart_robot_stream import *
 from imageproc_py.stream.asynch_dispatch import *
 
+from dynamic_reconfigure.server import Server
+from imageproc_node.cfg import DriveConfig
 smsg = sensor_msgs.msg.JointState()
 imsg = sensor_msgs.msg.Imu()    # IMU message
 PI = 3.1415926536
@@ -49,14 +51,14 @@ def clamp(value, minVal, maxVal):
     return max(minVal, min(maxVal, value))
 
 def handle_command(msg):
-    left_throttle = linearGain * msg.linear.x - angularGain * msg.angular.z
-    right_throttle = linearGain * msg.linear.x + angularGain * msg.angular.z
-    left_throttle = -left_throttle if invertLeft else left_throttle
-    right_throttle = -right_throttle if invertRight else right_throttle
-    left_throttle = clamp(left_throttle, minThrottle, maxThrottle)
-    right_throttle = clamp(right_throttle, minThrottle, maxThrottle)
+    left_throttle = linear_gain * msg.linear.x - angular_gain * msg.angular.z
+    right_throttle = linear_gain * msg.linear.x + angular_gain * msg.angular.z
+    left_throttle = left_throttle * left_gain
+    right_throttle = right_throttle * right_gain
+    left_throttle = clamp(left_throttle, min_throttle, max_throttle)
+    right_throttle = clamp(right_throttle, min_throttle, max_throttle)
 
-    #print 'setting thrust left=%d  right=%d' %(left_throttle, right_throttle)
+    rospy.loginfo('setting thrust left=%d  right=%d' %(left_throttle, right_throttle))
     robot.set_thrust_open_loop(left_throttle, right_throttle)
 
 def telem_data_received(message):
@@ -77,8 +79,21 @@ def telem_data_received(message):
     imsg.linear_acceleration.z = data[12]
     imuPub.publish(imsg)
 
+def reconfigure(config, level):
+
+    global left_gain, right_gain, linear_gain, angular_gain, min_throttle, max_throttle
+    rospy.loginfo("reconfigure=" + str(config))
+    left_gain = config['left_gain']
+    right_gain = config['right_gain']
+    linear_gain = config['linear_gain']
+    angular_gain = config['angular_gain']
+    min_throttle = config['min_throttle']
+    max_throttle = config['max_throttle']
+    return config
+
+
 def main():
-    print "nodetest.py running..."
+    print "node.py running..."
 
     rospy.init_node('imageproc_node')
     rospy.Subscriber('cmd_vel',
@@ -88,21 +103,18 @@ def main():
     global imuPub
     imuPub = rospy.Publisher('/robot/imu', sensor_msgs.msg.Imu)
 
-    global invertLeft, invertRight, minThrottle, maxThrottle, linearGain, angularGain
-    device = rospy.get_param('~device', '/dev/ttyUSB0')
-    invertLeft = rospy.get_param('~invertLeft', False)
-    invertRight = rospy.get_param('~invertRight', False)
-    minThrottle = rospy.get_param('~minThrottle', -500)
-    maxThrottle = rospy.get_param('~maxThrottle', 500)
-    linearGain = rospy.get_param('~linearGain', 2400)
-    angularGain = rospy.get_param('~angularGain', 2400)
 
-    print "invertLeft=" + str(invertLeft)
-    print "invertRight=" + str(invertRight)
-    print "minThrottle=" + str(minThrottle)
-    print "maxThrottle=" + str(invertLeft)
-    print "linearGain=" + str(linearGain)
-    print "angularGain=" + str(angularGain)
+    device = rospy.get_param('~device', '/dev/ttyUSB0')
+    global left_gain, right_gain, linear_gain, angular_gain, min_throttle, max_throttle
+    left_gain = 1.0
+    right_gain = 1.0
+    linear_gain = 2400
+    angular_gain = 2400
+    min_throttle = -500
+    max_throttle = 500
+
+    srv = Server(DriveConfig, reconfigure)
+
 
     print "device=" + str(device)
 

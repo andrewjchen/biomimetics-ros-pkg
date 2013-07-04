@@ -42,12 +42,11 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
-  <build_depend>imageproc_py</build_depend>
   <build_depend>create_driver</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
-  <run_depend>imageproc_py</run_depend>
-  <run_depend>create_driver</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

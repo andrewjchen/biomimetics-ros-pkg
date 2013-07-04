@@ -4,7 +4,7 @@ project(imageproc_node)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy)
+find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure roscpp rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -12,8 +12,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
-## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
-#catkin_python_setup()
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+# catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -39,6 +39,16 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy)
 #   std_msgs  # Or other packages containing msgs
 # )
 
+#add dynamic reconfigure api
+find_package(catkin REQUIRED dynamic_reconfigure)
+generate_dynamic_reconfigure_options(
+  cfg/Drive.cfg
+)
+
+# make sure configure headers are built before any node using them
+#add_dependencies(example_node ${PROJECT_NAME}_gencfg) 
+
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -50,7 +60,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy)
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES imageproc_node
-#  CATKIN_DEPENDS roscpp rospy
+#  CATKIN_DEPENDS dynamic_reconfigure roscpp rospy
 #  DEPENDS system_lib
 )
 
@@ -86,7 +96,7 @@ include_directories(include
 #############
 
 # all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/groovy/api/catkin/html/adv_user_guide/variables.html
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination

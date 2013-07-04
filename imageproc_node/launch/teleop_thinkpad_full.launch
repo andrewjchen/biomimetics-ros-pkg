@@ -1,16 +1,18 @@
 <launch>
     <node name="logitech_teleop" pkg="imageproc_node" type="twist_logitech_joy.py" output="screen">
     </node>
-    <node name="imageproc_node" pkg="imageproc_node" type="imageproc_node.py" output="screen">
+    <node name="imageproc_node" pkg="imageproc_node" type="node.py" output="screen">
         <rosparam param="device">/dev/ttyUSB0</rosparam>
-        <rosparam param="invertLeft">True</rosparam>
-        <rosparam param="invertRight">True</rosparam>
-        <rosparam param="minThrottle">-1000</rosparam>
-        <rosparam param="maxThrottle">1000</rosparam>
-        <rosparam param="linearGain">2400</rosparam>
-        <rosparam param="angularGain">2400</rosparam>
-
+     </node>
+    <node name="$(anon dynparam)" pkg="dynamic_reconfigure" type="dynparam" args="set_from_parameters imageproc_node">
+        <param name="left_gain" type="double" value="-1.0" />
+        <param name="right_gain" type="double" value="-1.0" />
+        <param name="linear_gain" type="double" value="1200.0" />
+        <param name="angular_gain" type="double" value="1200.0" />
+        <param name="min_throttle" type="double" value="-2400.0" />
+        <param name="max_throttle" type="double" value="2400.0" />
     </node>
+
     <node name="estop" pkg="imageproc_node" type="emergencystop.py" output="screen" />
     <node name="joy_node" pkg="joy" type="joy_node" output="screen" />
     <node name="heartbeat" pkg="imageproc_node" type="heartbeat.py" output="screen" />
