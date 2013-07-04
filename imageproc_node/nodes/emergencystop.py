@@ -86,6 +86,7 @@ def updateVelocity(safeCmdVel):
 
 def stopRobot():
     global pub
+    rospy.loginfo("Stopping!")
     pub.publish(ZERO_TWIST)
 
 main()
