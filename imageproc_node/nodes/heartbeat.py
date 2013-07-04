@@ -61,8 +61,10 @@ def main():
 
     while (not rospy.is_shutdown()):
         if robotEnabled:
+            rospy.loginfo("Enabled! count=" + str(countNumber))
             pub.publish(countNumber)
             countNumber = countNumber + 1
+        rospy.loginfo("Disabled! count=" + str(countNumber))
         rospy.sleep(POLL_TIME)
 
 def joystickChanged(data):
